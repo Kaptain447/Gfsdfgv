@@ -1,11 +1,12 @@
+import type React from "react"
 import { Suspense } from "react"
 import type { Metadata } from "next"
-import { Inter } from 'next/font/google'
+import { Inter } from "next/font/google"
 import Script from "next/script"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 
-import "./globals.css"
+import "@/app/globals.css"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ScrollProgress } from "@/components/scroll-progress"
@@ -13,16 +14,9 @@ import { ScrollProgress } from "@/components/scroll-progress"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Pinnacle Wealth - Your Financial Future",
-  description:
-    "Pinnacle Wealth is a leading investment platform offering expert guidance and innovative tools for financial growth.",
-  keywords: [
-    "investment",
-    "wealth management",
-    "finance",
-    "trading",
-    "financial planning",
-  ],
+  title: "Pinnacle Wealth",
+  description: "Professional services at your fingertips.",
+  keywords: ["investment", "wealth management", "finance", "trading", "financial planning"],
   authors: [{ name: "Pinnacle Wealth" }],
   creator: "Pinnacle Wealth",
   publisher: "Pinnacle Wealth",
@@ -77,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <head>
         {/* Google Translate */}
         <Script
@@ -110,28 +104,17 @@ export default function RootLayout({
         </Script>
       </head>
 
-      <body className={inter.className}>
-        {/* Scroll indicator might include useSearchParams internally → wrap in Suspense */}
+      <body className="min-h-screen flex flex-col">
+        {/* Components that use useSearchParams MUST be inside Suspense */}
         <Suspense fallback={null}>
           <ScrollProgress />
-        </Suspense>
-
-        {/* Google Translate UI container */}
-        <div
-          id="google_translate_element"
-          className="fixed top-0 right-0 z-[1000] rounded-bl-lg bg-white p-2 shadow-md"
-        />
-
-        {/* Header relies on Client components that call useSearchParams, so wrap it */}
-        <Suspense fallback={null}>
           <Header />
         </Suspense>
 
-        {children}
+        <main className="flex-1">{children}</main>
 
         <Footer />
-
-        {/* Analytics */}
+        {/* Global analytics */}
         <Analytics />
         <SpeedInsights />
       </body>

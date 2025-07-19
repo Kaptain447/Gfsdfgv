@@ -1,60 +1,49 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-/**
- * POST /api/contact
- * Receives the contact form JSON payload and forwards it to EmailJS.
- * Environment variables (server-side only):
- *  - EMAILJS_SERVICE_ID
- *  - EMAILJS_TEMPLATE_ID
- *  - EMAILJS_PUBLIC_KEY
- */
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, email, phone, service, message } = await req.json()
+    const body = await request.json()
+    const { name, email, phone, service, message, newsletter } = body
 
-    // Basic validation
-    if (!name || !email || !phone || !service || !message) {
-      return NextResponse.json({ error: "Missing required fields." }, { status: 400 })
+    // Validate required fields
+    if (!name || !email || !message) {
+      return NextResponse.json({ error: "Name, email, and message are required" }, { status: 400 })
     }
 
+    // Import EmailJS dynamically to reduce bundle size
+    const emailjs = await import("@emailjs/browser")
+
+    // Initialize EmailJS with your public key
+    const publicKey = process.env.EMAILJS_PUBLIC_KEY
     const serviceId = process.env.EMAILJS_SERVICE_ID
     const templateId = process.env.EMAILJS_TEMPLATE_ID
-    const publicKey = process.env.EMAILJS_PUBLIC_KEY
 
-    if (!serviceId || !templateId || !publicKey) {
-      console.error("EmailJS env vars are not configured.")
-      return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 })
+    if (!publicKey || !serviceId || !templateId) {
+      console.error("Missing EmailJS configuration")
+      return NextResponse.json({ error: "Email service configuration error" }, { status: 500 })
     }
 
-    // Build request for EmailJS REST API
-    const emailJsPayload = {
-      service_id: serviceId,
-      template_id: templateId,
-      user_id: publicKey,
-      template_params: {
-        from_name: name,
-        from_email: email,
-        phone_number: phone,
-        service_interest: service,
-        message,
-      },
+    // Prepare template parameters
+    const templateParams = {
+      from_name: name,
+      from_email: email,
+      phone: phone || "Not provided",
+      service: service || "General Inquiry",
+      message: message,
+      newsletter: newsletter ? "Yes" : "No",
+      to_name: "Pinnacle Wealth Team",
     }
 
-    const emailJsRes = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(emailJsPayload),
-    })
+    // Send email using EmailJS
+    const response = await emailjs.send(serviceId, templateId, templateParams, publicKey)
 
-    if (!emailJsRes.ok) {
-      const text = await emailJsRes.text()
-      console.error("EmailJS error:", text)
-      return NextResponse.json({ error: "Failed to send email." }, { status: 502 })
+    if (response.status === 200) {
+      return NextResponse.json({ message: "Email sent successfully" }, { status: 200 })
+    } else {
+      throw new Error("Failed to send email")
     }
-
-    return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {
-    console.error("Contact route error:", error)
-    return NextResponse.json({ error: "Internal Server Error." }, { status: 500 })
+    console.error("Contact form error:", error)
+    return NextResponse.json({ error: "Failed to send message. Please try again later." }, { status: 500 })
   }
 }

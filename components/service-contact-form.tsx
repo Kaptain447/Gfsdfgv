@@ -1,266 +1,243 @@
 "use client"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Send, CheckCircle, X } from "lucide-react"
+import type React from "react"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, Send, CheckCircle, AlertCircle } from "lucide-react"
 
-// ─────────────────────────────────────────────────────────────────────────
-// Validation
-// ─────────────────────────────────────────────────────────────────────────
-const quickContactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  service: z.string().min(1, "Please select a service"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-})
-
-type QuickContactFormData = z.infer<typeof quickContactSchema>
-
-// ─────────────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────────────
-interface ServiceContactFormProps {
-  serviceName: string
-  serviceDescription?: string
-  triggerText?: string
-  triggerClassName?: string
+interface FormData {
+  name: string
+  email: string
+  phone: string
+  service: string
+  message: string
+  newsletter: boolean
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────
-export function ServiceContactForm({
-  serviceName,
-  serviceDescription,
-  triggerText = "Request Consultation",
-  triggerClassName = "bg-blue-600 hover:bg-blue-700 text-white",
-}: ServiceContactFormProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+interface FormStatus {
+  type: "idle" | "loading" | "success" | "error"
+  message: string
+}
 
-  const form = useForm<QuickContactFormData>({
-    resolver: zodResolver(quickContactSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      service: serviceName,
-      message: "",
-    },
+export default function ServiceContactForm() {
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    phone: "",
+    service: "",
+    message: "",
+    newsletter: false,
   })
 
-  // ───────────────────────────────────────────────────────────────────────
-  // Submit handler
-  // ───────────────────────────────────────────────────────────────────────
-  const onSubmit = async (data: QuickContactFormData) => {
-    setIsSubmitting(true)
-    setSubmitError(null)
+  const [status, setStatus] = useState<FormStatus>({
+    type: "idle",
+    message: "",
+  })
+
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatus({ type: "loading", message: "Sending your message..." })
 
     try {
-      const res = await fetch("/api/contact", {
+      const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       })
 
-      if (!res.ok) {
-        const { error } = await res.json()
-        throw new Error(error ?? "Failed to send your request.")
-      }
+      const result = await response.json()
 
-      // Success
-      setIsSubmitted(true)
-      setTimeout(() => {
-        setIsSubmitted(false)
-        setIsOpen(false)
-        form.reset()
-      }, 3000)
+      if (response.ok) {
+        setStatus({
+          type: "success",
+          message: "Thank you! Your message has been sent successfully. We'll get back to you soon.",
+        })
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          service: "",
+          message: "",
+          newsletter: false,
+        })
+      } else {
+        throw new Error(result.error || "Failed to send message")
+      }
     } catch (error) {
-      console.error(error)
-      setSubmitError(error instanceof Error ? error.message : "Something went wrong.")
-    } finally {
-      setIsSubmitting(false)
+      setStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+      })
     }
   }
 
-  // ───────────────────────────────────────────────────────────────────────
-  // UI
-  // ───────────────────────────────────────────────────────────────────────
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className={triggerClassName}>{triggerText}</Button>
-      </DialogTrigger>
-
-      <DialogContent className="sm:max-w-[500px]">
-        {/* Header */}
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            Request {serviceName} Consultation
-            <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="h-6 w-6 p-0">
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
-          <DialogDescription>
-            {serviceDescription ??
-              `Fill out the form below and our expert team will contact you within 24 hours to discuss your ${serviceName.toLowerCase()} needs.`}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Success State */}
-        {isSubmitted ? (
-          <div className="text-center py-8">
-            <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+    <Card className="w-full max-w-2xl mx-auto shadow-lg">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold text-gray-900">Get in Touch</CardTitle>
+        <CardDescription className="text-gray-600">
+          Ready to start your investment journey? Contact our experts today for personalized guidance.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter your full name"
+                required
+                disabled={status.type === "loading"}
+              />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Request Submitted!</h3>
-            <p className="text-gray-600 text-sm">
-              Thank you for your interest. Our team will contact you within 24 hours.
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="Enter your email"
+                required
+                disabled={status.type === "loading"}
+              />
+            </div>
           </div>
-        ) : (
-          // Form
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Name */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your full name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="Enter your phone number"
+                disabled={status.type === "loading"}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="service">Service Interest</Label>
+              <Select
+                value={formData.service}
+                onValueChange={(value) => handleInputChange("service", value)}
+                disabled={status.type === "loading"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="investment-planning">Investment Planning</SelectItem>
+                  <SelectItem value="portfolio-management">Portfolio Management</SelectItem>
+                  <SelectItem value="financial-advisory">Financial Advisory</SelectItem>
+                  <SelectItem value="retirement-planning">Retirement Planning</SelectItem>
+                  <SelectItem value="wealth-management">Wealth Management</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-              {/* Email / Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter your email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div className="space-y-2">
+            <Label htmlFor="message">Message *</Label>
+            <Textarea
+              id="message"
+              value={formData.message}
+              onChange={(e) => handleInputChange("message", e.target.value)}
+              placeholder="Tell us about your investment goals and how we can help you..."
+              rows={4}
+              required
+              disabled={status.type === "loading"}
+            />
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone *</FormLabel>
-                      <FormControl>
-                        <Input type="tel" placeholder="Enter your phone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="newsletter"
+              checked={formData.newsletter}
+              onCheckedChange={(checked) => handleInputChange("newsletter", checked as boolean)}
+              disabled={status.type === "loading"}
+            />
+            <Label htmlFor="newsletter" className="text-sm text-gray-600">
+              Subscribe to our newsletter for investment tips and market insights
+            </Label>
+          </div>
 
-              {/* Service */}
-              <FormField
-                control={form.control}
-                name="service"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Interest *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Real Estate Investment Advisory">Real Estate Investment Advisory</SelectItem>
-                        <SelectItem value="Stock Market Investment Strategies">
-                          Stock Market Investment Strategies
-                        </SelectItem>
-                        <SelectItem value="Property Management">Property Management</SelectItem>
-                        <SelectItem value="Real Estate Development Consulting">
-                          Real Estate Development Consulting
-                        </SelectItem>
-                        <SelectItem value="Portfolio Diversification & Risk Management">
-                          Portfolio Diversification &amp; Risk Management
-                        </SelectItem>
-                        <SelectItem value="Social Media Marketing">Social Media Marketing</SelectItem>
-                        <SelectItem value="General Consultation">General Consultation</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {status.type !== "idle" && (
+            <Alert
+              className={
+                status.type === "success"
+                  ? "border-green-200 bg-green-50"
+                  : status.type === "error"
+                    ? "border-red-200 bg-red-50"
+                    : ""
+              }
+            >
+              {status.type === "success" && <CheckCircle className="h-4 w-4 text-green-600" />}
+              {status.type === "error" && <AlertCircle className="h-4 w-4 text-red-600" />}
+              <AlertDescription
+                className={status.type === "success" ? "text-green-800" : status.type === "error" ? "text-red-800" : ""}
+              >
+                {status.message}
+              </AlertDescription>
+            </Alert>
+          )}
 
-              {/* Message */}
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell us about your investment goals and requirements..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold transition-all duration-300"
+            disabled={status.type === "loading"}
+          >
+            {status.type === "loading" ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-5 w-5" />
+                Send Message
+              </>
+            )}
+          </Button>
+        </form>
 
-              {/* Error */}
-              {submitError && <div className="text-red-500 text-sm text-center">{submitError}</div>}
-
-              {/* Submit */}
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Submit Request
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
-    </Dialog>
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+          <p>
+            By submitting this form, you agree to our{" "}
+            <a href="/privacy-policy" className="text-blue-600 hover:underline">
+              Privacy Policy
+            </a>{" "}
+            and{" "}
+            <a href="/terms-of-service" className="text-blue-600 hover:underline">
+              Terms of Service
+            </a>
+            .
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

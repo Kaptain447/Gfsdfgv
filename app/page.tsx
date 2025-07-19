@@ -1,23 +1,66 @@
 import Link from "next/link"
 import Image from "next/image"
+import { Suspense, lazy } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { ArrowRightIcon, CheckCircleIcon, StarIcon, UsersIcon } from "lucide-react"
-import { TestimonialsSection } from "@/components/testimonials-section"
-import { AwardsCertifications } from "@/components/awards-certifications"
+
+// Lazy load non-critical components
+const TestimonialsSection = lazy(() =>
+  import("@/components/testimonials-section").then((mod) => ({ default: mod.TestimonialsSection })),
+)
+const AwardsCertifications = lazy(() =>
+  import("@/components/awards-certifications").then((mod) => ({ default: mod.AwardsCertifications })),
+)
+const ServiceContactForm = lazy(() => import("@/components/service-contact-form"))
+
+// Loading fallback component
+function SectionSkeleton() {
+  return (
+    <div className="py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        <div className="animate-pulse space-y-8">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ContactFormSkeleton() {
+  return (
+    <div className="max-w-screen-md mx-auto px-4 pb-24">
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+        <div className="space-y-3">
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   return (
     <main className="flex-1">
-      {/* Hero Section */}
+      {/* Hero Section - Critical, load immediately */}
       <section className="relative w-full h-[600px] bg-gradient-to-r from-gray-900 to-black text-white flex items-center justify-center overflow-hidden">
         <Image
           src="/images/hero-family.jpg"
           alt="Happy family investing"
-          layout="fill"
-          objectFit="cover"
+          fill
+          sizes="100vw"
           quality={90}
-          className="absolute inset-0 z-0 opacity-30"
+          className="absolute inset-0 z-0 opacity-30 object-cover"
+          priority
         />
         <div className="relative z-10 text-center px-4">
           <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6 drop-shadow-lg">
@@ -44,7 +87,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* New Welcome Section */}
+      {/* Welcome Section - Critical, load immediately */}
       <section className="py-12 bg-white">
         <div className="max-w-screen-xl mx-auto px-4">
           <h1 className="text-4xl font-bold">Welcome to Our Company</h1>
@@ -52,7 +95,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Contact form section - Lazy loaded */}
+      <Suspense fallback={<ContactFormSkeleton />}>
+        <section className="max-w-screen-md mx-auto px-4 pb-24">
+          <ServiceContactForm />
+        </section>
+      </Suspense>
+
+      {/* Features Section - Critical, load immediately */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-12">Why Choose Pinnacle Wealth?</h2>
@@ -82,10 +132,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <TestimonialsSection />
+      {/* Testimonials Section - Lazy loaded */}
+      <Suspense fallback={<SectionSkeleton />}>
+        <TestimonialsSection />
+      </Suspense>
 
-      {/* Call to Action Section */}
+      {/* Call to Action Section - Critical for conversion */}
       <section className="py-16 md:py-24 bg-gray-900 text-white text-center">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold mb-6">Ready to Grow Your Wealth?</h2>
@@ -101,10 +153,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Awards and Certifications Section */}
-      <AwardsCertifications />
+      {/* Awards and Certifications Section - Lazy loaded */}
+      <Suspense fallback={<SectionSkeleton />}>
+        <AwardsCertifications />
+      </Suspense>
 
-      {/* Services Overview Section */}
+      {/* Services Overview Section - Critical for SEO and navigation */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-12">Our Services</h2>
