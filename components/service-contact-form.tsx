@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Send, CheckCircle, AlertCircle } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 interface FormData {
   name: string
@@ -42,6 +42,8 @@ export default function ServiceContactForm() {
     message: "",
   })
 
+  const [pending, setPending] = useState(false)
+
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({
       ...prev,
@@ -49,8 +51,13 @@ export default function ServiceContactForm() {
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setPending(true)
     setStatus({ type: "loading", message: "Sending your message..." })
 
     try {
@@ -69,6 +76,7 @@ export default function ServiceContactForm() {
           type: "success",
           message: "Thank you! Your message has been sent successfully. We'll get back to you soon.",
         })
+        toast({ title: "Sent!", description: "We will get back to you shortly." })
         // Reset form
         setFormData({
           name: "",
@@ -86,6 +94,9 @@ export default function ServiceContactForm() {
         type: "error",
         message: error instanceof Error ? error.message : "Failed to send message. Please try again.",
       })
+      toast({ title: "Error", description: "Unable to send your message.", variant: "destructive" })
+    } finally {
+      setPending(false)
     }
   }
 
@@ -105,11 +116,12 @@ export default function ServiceContactForm() {
               <Input
                 id="name"
                 type="text"
+                name="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
+                onChange={handleChange}
                 placeholder="Enter your full name"
                 required
-                disabled={status.type === "loading"}
+                disabled={status.type === "loading" || pending}
               />
             </div>
             <div className="space-y-2">
@@ -117,11 +129,12 @@ export default function ServiceContactForm() {
               <Input
                 id="email"
                 type="email"
+                name="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
+                onChange={handleChange}
                 placeholder="Enter your email"
                 required
-                disabled={status.type === "loading"}
+                disabled={status.type === "loading" || pending}
               />
             </div>
           </div>
@@ -132,10 +145,11 @@ export default function ServiceContactForm() {
               <Input
                 id="phone"
                 type="tel"
+                name="phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
+                onChange={handleChange}
                 placeholder="Enter your phone number"
-                disabled={status.type === "loading"}
+                disabled={status.type === "loading" || pending}
               />
             </div>
             <div className="space-y-2">
@@ -143,7 +157,7 @@ export default function ServiceContactForm() {
               <Select
                 value={formData.service}
                 onValueChange={(value) => handleInputChange("service", value)}
-                disabled={status.type === "loading"}
+                disabled={status.type === "loading" || pending}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a service" />
@@ -164,12 +178,13 @@ export default function ServiceContactForm() {
             <Label htmlFor="message">Message *</Label>
             <Textarea
               id="message"
+              name="message"
               value={formData.message}
-              onChange={(e) => handleInputChange("message", e.target.value)}
+              onChange={handleChange}
               placeholder="Tell us about your investment goals and how we can help you..."
               rows={4}
               required
-              disabled={status.type === "loading"}
+              disabled={status.type === "loading" || pending}
             />
           </div>
 
@@ -178,7 +193,7 @@ export default function ServiceContactForm() {
               id="newsletter"
               checked={formData.newsletter}
               onCheckedChange={(checked) => handleInputChange("newsletter", checked as boolean)}
-              disabled={status.type === "loading"}
+              disabled={status.type === "loading" || pending}
             />
             <Label htmlFor="newsletter" className="text-sm text-gray-600">
               Subscribe to our newsletter for investment tips and market insights
@@ -208,9 +223,9 @@ export default function ServiceContactForm() {
           <Button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold transition-all duration-300"
-            disabled={status.type === "loading"}
+            disabled={status.type === "loading" || pending}
           >
-            {status.type === "loading" ? (
+            {status.type === "loading" || pending ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Sending...

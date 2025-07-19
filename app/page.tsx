@@ -1,18 +1,19 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Suspense, lazy } from "react"
+import dynamic from "next/dynamic"
+import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { ArrowRightIcon, CheckCircleIcon, StarIcon, UsersIcon } from "lucide-react"
 
 // Lazy load non-critical components
-const TestimonialsSection = lazy(() =>
-  import("@/components/testimonials-section").then((mod) => ({ default: mod.TestimonialsSection })),
-)
-const AwardsCertifications = lazy(() =>
-  import("@/components/awards-certifications").then((mod) => ({ default: mod.AwardsCertifications })),
-)
-const ServiceContactForm = lazy(() => import("@/components/service-contact-form"))
+const TestimonialsSection = dynamic(() => import("@/components/testimonials-section"), {
+  loading: () => <div className="h-48 animate-pulse bg-muted" />,
+})
+const AwardsCertifications = dynamic(() => import("@/components/awards-certifications"), {
+  loading: () => <div className="h-48 animate-pulse bg-muted" />,
+})
+const ServiceContactForm = dynamic(() => import("@/components/service-contact-form"))
 
 // Loading fallback component
 function SectionSkeleton() {
@@ -52,53 +53,26 @@ export default function HomePage() {
   return (
     <main className="flex-1">
       {/* Hero Section - Critical, load immediately */}
-      <section className="relative w-full h-[600px] bg-gradient-to-r from-gray-900 to-black text-white flex items-center justify-center overflow-hidden">
-        <Image
-          src="/images/hero-family.jpg"
-          alt="Happy family investing"
-          fill
-          sizes="100vw"
-          quality={90}
-          className="absolute inset-0 z-0 opacity-30 object-cover"
-          priority
-        />
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6 drop-shadow-lg">
-            Invest in Your Future with Pinnacle Wealth
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto opacity-90">
-            Unlock unparalleled financial growth with expert guidance, innovative tools, and a secure platform.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button
-              asChild
-              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              <Link href="/investment">Start Investing</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-white text-white bg-transparent hover:bg-white hover:text-gray-900 text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              <Link href="/about">Learn More</Link>
-            </Button>
-          </div>
+      <section className="relative">
+        <Image src="/images/hero-family.jpg" alt="" fill priority sizes="100vw" className="object-cover" />
+        <div className="relative z-10 flex h-[60vh] items-center justify-center bg-black/50">
+          <h1 className="text-5xl font-bold text-white">Invest with Confidence</h1>
         </div>
       </section>
 
       {/* Welcome Section - Critical, load immediately */}
-      <section className="py-12 bg-white">
-        <div className="max-w-screen-xl mx-auto px-4">
-          <h1 className="text-4xl font-bold">Welcome to Our Company</h1>
-          <p className="mt-4 text-lg">Professional services at your fingertips.</p>
-        </div>
+      <section className="max-w-screen-xl mx-auto px-4 py-16 text-center">
+        <h2 className="text-4xl font-bold">Welcome to Our Company</h2>
+        <p className="mt-4 text-lg text-muted-foreground">Professional services at your fingertips.</p>
       </section>
 
       {/* Contact form section - Lazy loaded */}
       <Suspense fallback={<ContactFormSkeleton />}>
-        <section className="max-w-screen-md mx-auto px-4 pb-24">
-          <ServiceContactForm />
+        <section id="contact" className="bg-muted py-16">
+          <div className="max-w-lg mx-auto space-y-8 px-4">
+            <h3 className="text-3xl font-semibold text-center">Get in touch</h3>
+            <ServiceContactForm />
+          </div>
         </section>
       </Suspense>
 

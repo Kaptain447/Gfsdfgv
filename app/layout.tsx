@@ -7,31 +7,32 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 
 import "@/app/globals.css"
-import { Header } from "@/components/header"
+import Header from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ScrollProgress } from "@/components/scroll-progress"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Pinnacle Wealth",
+  title: "Famous FX",
   description: "Professional services at your fingertips.",
   keywords: ["investment", "wealth management", "finance", "trading", "financial planning"],
-  authors: [{ name: "Pinnacle Wealth" }],
-  creator: "Pinnacle Wealth",
-  publisher: "Pinnacle Wealth",
+  authors: [{ name: "Famous FX" }],
+  creator: "Famous FX",
+  publisher: "Famous FX",
   openGraph: {
-    title: "Pinnacle Wealth - Your Financial Future",
+    title: "Famous FX - Your Financial Future",
     description:
-      "Pinnacle Wealth is a leading investment platform offering expert guidance and innovative tools for financial growth.",
-    url: "https://www.pinnaclewealth.com",
-    siteName: "Pinnacle Wealth",
+      "Famous FX is a leading investment platform offering expert guidance and innovative tools for financial growth.",
+    url: "https://www.famousfx.com",
+    siteName: "Famous FX",
     images: [
       {
-        url: "https://www.pinnaclewealth.com/og-image.jpg",
+        url: "https://www.famousfx.com/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pinnacle Wealth",
+        alt: "Famous FX",
       },
     ],
     locale: "en_US",
@@ -39,11 +40,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pinnacle Wealth - Your Financial Future",
+    title: "Famous FX - Your Financial Future",
     description:
-      "Pinnacle Wealth is a leading investment platform offering expert guidance and innovative tools for financial growth.",
-    creator: "@PinnacleWealth",
-    images: ["https://www.pinnaclewealth.com/twitter-image.jpg"],
+      "Famous FX is a leading investment platform offering expert guidance and innovative tools for financial growth.",
+    creator: "@FamousFX",
+    images: ["https://www.famousfx.com/twitter-image.jpg"],
   },
   robots: {
     index: true,
@@ -71,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={inter.className} suppressHydrationWarning>
       <head>
         {/* Google Translate */}
         <Script
@@ -105,17 +106,19 @@ export default function RootLayout({
       </head>
 
       <body className="min-h-screen flex flex-col">
-        {/* Components that use useSearchParams MUST be inside Suspense */}
-        <Suspense fallback={null}>
-          <ScrollProgress />
-          <Header />
-        </Suspense>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          {/* Components that use useSearchParams MUST be inside Suspense */}
+          <Suspense fallback={null}>
+            <ScrollProgress />
+            <Header />
+          </Suspense>
 
-        <main className="flex-1">{children}</main>
+          <main className="flex-1">{children}</main>
 
-        <Footer />
-        {/* Global analytics */}
-        <Analytics />
+          <Footer />
+          {/* Global analytics */}
+          <Analytics />
+        </ThemeProvider>
         <SpeedInsights />
       </body>
     </html>
