@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BrandedLoading } from "@/components/branded-loading"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProfileWidget } from "@/components/profile-management/profile-widget"
-import { ProfileCompletion } from "@/components/profile-management/profile-completion"
-import { ProfileAnalytics } from "@/components/profile-management/profile-analytics"
+import ProfileWidget from "@/components/profile-management/profile-widget"
+import ProfileCompletion from "@/components/profile-management/profile-completion"
+import ProfileAnalytics from "@/components/profile-management/profile-analytics"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   DollarSignIcon,
   TrendingUpIcon,
@@ -70,9 +70,26 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
   const [investments, setInvestments] = useState<Investment[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [transactionsData, setTransactionsData] = useState<Transaction[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [percent, setPercent] = useState(0)
+
+  const growth = [
+    { month: "Jan", value: 1000 },
+    { month: "Feb", value: 1400 },
+    { month: "Mar", value: 1600 },
+    { month: "Apr", value: 1900 },
+    { month: "May", value: 2300 },
+    { month: "Jun", value: 2800 },
+  ]
+
+  const transactions = [
+    { name: "Deposits", value: 60 },
+    { name: "Withdrawals", value: 25 },
+    { name: "Fees", value: 10 },
+    { name: "Dividends", value: 5 },
+  ]
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -115,7 +132,7 @@ export default function DashboardPage() {
         })
         if (!transactionsRes.ok) throw new Error("Failed to fetch transactions")
         const transactionsData = await transactionsRes.json()
-        setTransactions(transactionsData)
+        setTransactionsData(transactionsData)
 
         // Fetch activities
         const activitiesRes = await fetch("/api/user/activities", {
@@ -148,8 +165,26 @@ export default function DashboardPage() {
     fetchDashboardData()
   }, [router])
 
+  useEffect(() => {
+    // Fake API request
+    const timer = setTimeout(() => {
+      setPercent(76)
+      setLoading(false)
+    }, 900)
+    return () => clearTimeout(timer)
+  }, [])
+
   if (loading) {
-    return <BrandedLoading />
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-28 w-full rounded-lg" />
+        <Skeleton className="h-28 w-full rounded-lg" />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-80 w-full rounded-lg" />
+          <Skeleton className="h-80 w-full rounded-lg" />
+        </div>
+      </div>
+    )
   }
 
   if (error) {
@@ -240,7 +275,7 @@ export default function DashboardPage() {
                   <CardTitle>Portfolio Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ProfileAnalytics />
+                  <ProfileAnalytics growth={growth} transactions={transactions} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -317,7 +352,7 @@ export default function DashboardPage() {
             totalInvested={userProfile.totalInvested}
             totalProfit={userProfile.totalProfit}
           />
-          <ProfileCompletion percentage={userProfile.profileCompletionPercentage} />
+          <ProfileCompletion percentage={percent} />
 
           <Card>
             <CardHeader>
@@ -378,7 +413,7 @@ export default function DashboardPage() {
           <CardTitle>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          {transactions.length > 0 ? (
+          {transactionsData.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -410,7 +445,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {transactions.map((tx) => (
+                  {transactionsData.map((tx) => (
                     <tr key={tx.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.type}</td>
                       <td
