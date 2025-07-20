@@ -10,14 +10,6 @@
     "lint": "next lint",
     "start": "next start"
   },
-  "resolutions": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "overrides": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^0.1.19",
     "@emailjs/browser": "^4.3.3",
