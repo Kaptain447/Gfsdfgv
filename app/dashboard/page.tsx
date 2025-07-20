@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ProfileWidget from "@/components/profile-management/profile-widget"
-import ProfileCompletion from "@/components/profile-management/profile-completion"
-import ProfileAnalytics from "@/components/profile-management/profile-analytics"
+import { ProfileWidget } from "@/components/profile-management/profile-widget"
+import { ProfileCompletion } from "@/components/profile-management/profile-completion"
+import { ProfileAnalytics } from "@/components/profile-management/profile-analytics"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   DollarSignIcon,
@@ -73,7 +73,6 @@ export default function DashboardPage() {
   const [transactionsData, setTransactionsData] = useState<Transaction[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
-  const [percent, setPercent] = useState(0)
 
   const growth = [
     { month: "Jan", value: 1000 },
@@ -101,62 +100,86 @@ export default function DashboardPage() {
           return
         }
 
-        // Fetch user profile
-        const profileRes = await fetch("/api/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!profileRes.ok) throw new Error("Failed to fetch profile")
-        const profileData = await profileRes.json()
+        // Mock data for demonstration
         setUserProfile({
-          firstName: profileData.first_name,
-          lastName: profileData.last_name,
-          profilePictureUrl: profileData.profile_picture_url,
-          totalInvested: profileData.total_invested,
-          totalProfit: profileData.total_profit,
-          activeInvestmentsCount: profileData.active_investments_count,
-          pendingWithdrawalsCount: profileData.pending_withdrawals_count,
-          profileCompletionPercentage: profileData.profile_completion_percentage,
+          firstName: "John",
+          lastName: "Doe",
+          profilePictureUrl: "/placeholder.svg?height=64&width=64",
+          totalInvested: 15000,
+          totalProfit: 2500,
+          activeInvestmentsCount: 3,
+          pendingWithdrawalsCount: 1,
+          profileCompletionPercentage: 76,
         })
 
-        // Fetch investments
-        const investmentsRes = await fetch("/api/user/investments", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!investmentsRes.ok) throw new Error("Failed to fetch investments")
-        const investmentsData = await investmentsRes.json()
-        setInvestments(investmentsData)
+        setInvestments([
+          {
+            id: "1",
+            plan_name: "Premium Plan",
+            amount: 5000,
+            status: "active",
+            expected_return: 5500,
+            current_value: 5200,
+          },
+          {
+            id: "2",
+            plan_name: "Professional Plan",
+            amount: 10000,
+            status: "active",
+            expected_return: 11500,
+            current_value: 10800,
+          },
+        ])
 
-        // Fetch transactions
-        const transactionsRes = await fetch("/api/user/transactions", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!transactionsRes.ok) throw new Error("Failed to fetch transactions")
-        const transactionsData = await transactionsRes.json()
-        setTransactionsData(transactionsData)
+        setTransactionsData([
+          {
+            id: "1",
+            type: "deposit",
+            amount: 5000,
+            status: "completed",
+            transaction_date: "2024-01-15",
+          },
+          {
+            id: "2",
+            type: "withdrawal",
+            amount: 1000,
+            status: "pending",
+            transaction_date: "2024-01-20",
+          },
+        ])
 
-        // Fetch activities
-        const activitiesRes = await fetch("/api/user/activities", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!activitiesRes.ok) throw new Error("Failed to fetch activities")
-        const activitiesData = await activitiesRes.json()
-        setActivities(activitiesData)
+        setActivities([
+          {
+            id: "1",
+            type: "Investment",
+            description: "Started Premium Plan investment",
+            timestamp: "2024-01-15T10:00:00Z",
+          },
+          {
+            id: "2",
+            type: "Withdrawal",
+            description: "Requested withdrawal of $1,000",
+            timestamp: "2024-01-20T14:30:00Z",
+          },
+        ])
 
-        // Fetch achievements
-        const achievementsRes = await fetch("/api/user/achievements", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!achievementsRes.ok) throw new Error("Failed to fetch achievements")
-        const achievementsData = await achievementsRes.json()
-        setAchievements(achievementsData)
+        setAchievements([
+          {
+            id: "1",
+            name: "First Investment",
+            description: "Made your first investment",
+            achieved_at: "2024-01-15",
+          },
+          {
+            id: "2",
+            name: "Profile Complete",
+            description: "Completed your profile setup",
+            achieved_at: "2024-01-10",
+          },
+        ])
       } catch (err: any) {
         console.error("Dashboard data fetch error:", err)
         setError(err.message || "Failed to load dashboard data.")
-        // If token is invalid or expired, redirect to signin
-        if (err.message.includes("token") || err.message.includes("Unauthorized")) {
-          localStorage.removeItem("token")
-          router.push("/auth/signin")
-        }
       } finally {
         setLoading(false)
       }
@@ -164,15 +187,6 @@ export default function DashboardPage() {
 
     fetchDashboardData()
   }, [router])
-
-  useEffect(() => {
-    // Fake API request
-    const timer = setTimeout(() => {
-      setPercent(76)
-      setLoading(false)
-    }, 900)
-    return () => clearTimeout(timer)
-  }, [])
 
   if (loading) {
     return (
@@ -352,7 +366,7 @@ export default function DashboardPage() {
             totalInvested={userProfile.totalInvested}
             totalProfit={userProfile.totalProfit}
           />
-          <ProfileCompletion percentage={percent} />
+          <ProfileCompletion percentage={userProfile.profileCompletionPercentage} />
 
           <Card>
             <CardHeader>

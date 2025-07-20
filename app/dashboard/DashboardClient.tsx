@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"

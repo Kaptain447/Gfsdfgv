@@ -2,12 +2,16 @@
 
 import type React from "react"
 
-import { CardDescription } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   PieChart,
@@ -15,7 +19,6 @@ import {
   Cell,
   BarChart,
   Bar,
-  CartesianGrid,
 } from "recharts"
 import {
   Eye,
@@ -31,13 +34,12 @@ import {
   Clock,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardTitle } from "@/components/ui/card"
-import type { ProfileAnalyticsProps } from "./profile-analytics-props" // Import ProfileAnalyticsProps
-import { Badge } from "@/components/ui/badge" // Import Badge
-import { useState, useEffect } from "react" // Import useState and useEffect
 
-type GrowthRecord = { month: string; value: number }
-type TxnRecord = { name: string; value: number }
+interface ProfileAnalyticsProps {
+  growth: Array<{ month: string; value: number }>
+  transactions: Array<{ name: string; value: number }>
+  className?: string
+}
 
 interface AnalyticsData {
   profileViews: number
@@ -72,41 +74,14 @@ interface Achievement {
   rarity: "common" | "rare" | "epic" | "legendary"
 }
 
-// Mock data for demonstration
-const mockAnalyticsData = {
-  investmentGrowth: [
-    { month: "Jan", value: 10000 },
-    { month: "Feb", value: 11000 },
-    { month: "Mar", value: 10500 },
-    { month: "Apr", value: 12000 },
-    { month: "May", value: 13500 },
-    { month: "Jun", value: 14000 },
-  ],
-  transactionBreakdown: [
-    { name: "Deposits", value: 70000, color: "#10B981" },
-    { name: "Withdrawals", value: 20000, color: "#EF4444" },
-    { name: "Profits", value: 15000, color: "#F59E0B" },
-  ],
-  activePlans: [
-    { name: "Professional", value: 3, color: "#3B82F6" },
-    { name: "Premium", value: 2, color: "#8B5CF6" },
-    { name: "Starter", value: 5, color: "#EC4899" },
-  ],
-}
-
 const COLORS = ["#34d399", "#6366f1", "#fcd34d", "#f472b6"]
 
-export function ProfileAnalytics({
-  className = "",
-  growth,
-  transactions,
-}: { className?: string } & ProfileAnalyticsProps) {
+export function ProfileAnalytics({ growth, transactions, className = "" }: ProfileAnalyticsProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("growth") // 'growth', 'transactions', 'plans'
 
   useEffect(() => {
     // Mock analytics data
@@ -205,66 +180,6 @@ export function ProfileAnalytics({
     return "→"
   }
 
-  const renderInvestmentOverviewChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={growth}>
-        <XAxis dataKey="month" stroke="#9ca3af" />
-        <YAxis stroke="#9ca3af" />
-        <Tooltip />
-        <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-
-  const renderInvestmentPerformanceChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie data={transactions} dataKey="value" nameKey="name" outerRadius={80} innerRadius={40} paddingAngle={4}>
-          {transactions.map((_, idx) => (
-            <Cell key={`c-${idx}`} fill={COLORS[idx % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip />
-      </PieChart>
-    </ResponsiveContainer>
-  )
-
-  const renderDailyPerformanceChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={timeSeriesData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="views" stroke="#3B82F6" />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-
-  const renderWeeklyPerformanceChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={timeSeriesData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="connections" fill="#10B981" />
-      </BarChart>
-    </ResponsiveContainer>
-  )
-
-  const renderMonthlyPerformanceChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={timeSeriesData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="activity" stroke="#F59E0B" />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-
   if (loading) {
     return (
       <Card className={className}>
@@ -354,47 +269,49 @@ export function ProfileAnalytics({
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Activity Trends */}
+        {/* Investment Growth */}
         <Card>
-          <CardTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Activity Trends</span>
-          </CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Investment Growth</span>
+            </CardTitle>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={timeSeriesData}>
+              <LineChart data={growth}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="views" fill="#3B82F6" />
-                <Bar dataKey="connections" fill="#10B981" />
-                <Bar dataKey="activity" fill="#F59E0B" />
-              </BarChart>
+                <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Engagement Breakdown */}
+        {/* Transaction Breakdown */}
         <Card>
-          <CardTitle className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5" />
-            <span>Engagement Breakdown</span>
-          </CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageCircle className="h-5 w-5" />
+              <span>Transaction Breakdown</span>
+            </CardTitle>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={chartData}
+                  data={transactions}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  fill="#8884d8"
                   dataKey="value"
+                  nameKey="name"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {transactions.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -404,64 +321,24 @@ export function ProfileAnalytics({
         </Card>
       </div>
 
-      {/* Investment Analytics */}
-      <Card className="col-span-1 lg:col-span-2">
-        <CardTitle className="text-xl font-bold">Investment Analytics</CardTitle>
-        <CardDescription>Track your portfolio performance over time.</CardDescription>
-        <CardContent className="space-y-4">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-            </TabsList>
-            <TabsContent value="overview" className="mt-4">
-              <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
-                {renderInvestmentOverviewChart()}
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Gain</p>
-                  <p className="text-xl font-bold text-green-600">+$1,250</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Return</p>
-                  <p className="text-xl font-bold text-blue-600">8.5%</p>
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="performance" className="mt-4">
-              <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
-                {renderInvestmentPerformanceChart()}
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Last 30 Days</p>
-                  <p className="text-xl font-bold text-green-600">+2.1%</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Year to Date</p>
-                  <p className="text-xl font-bold text-green-600">+15.3%</p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Performance Metrics */}
+      {/* Activity Trends */}
       <Card>
-        <CardTitle className="flex items-center space-x-2">
-          <Target className="h-5 w-5" />
-          <span>Performance Metrics</span>
-        </CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="h-5 w-5" />
+            <span>Activity Trends</span>
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
+            <BarChart data={timeSeriesData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#3B82F6" />
+              <Bar dataKey="views" fill="#3B82F6" />
+              <Bar dataKey="connections" fill="#10B981" />
+              <Bar dataKey="activity" fill="#F59E0B" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -469,10 +346,12 @@ export function ProfileAnalytics({
 
       {/* Recent Achievements */}
       <Card>
-        <CardTitle className="flex items-center space-x-2">
-          <Award className="h-5 w-5" />
-          <span>Recent Achievements</span>
-        </CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Award className="h-5 w-5" />
+            <span>Recent Achievements</span>
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {achievements.map((achievement) => (
@@ -500,10 +379,12 @@ export function ProfileAnalytics({
 
       {/* Engagement Score */}
       <Card>
-        <CardTitle className="flex items-center space-x-2">
-          <ThumbsUp className="h-5 w-5" />
-          <span>Engagement Score</span>
-        </CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <ThumbsUp className="h-5 w-5" />
+            <span>Engagement Score</span>
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div>
@@ -511,9 +392,7 @@ export function ProfileAnalytics({
                 <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
                 <span className="text-sm text-gray-600">85%</span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full w-full">
-                <div className="h-2 bg-blue-600 rounded-full w-1/4"></div>
-              </div>
+              <Progress value={85} className="h-2" />
             </div>
 
             <div>
@@ -521,9 +400,7 @@ export function ProfileAnalytics({
                 <span className="text-sm font-medium text-gray-700">Activity Level</span>
                 <span className="text-sm text-gray-600">92%</span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full w-full">
-                <div className="h-2 bg-green-600 rounded-full w-11/12"></div>
-              </div>
+              <Progress value={92} className="h-2" />
             </div>
 
             <div>
@@ -531,9 +408,7 @@ export function ProfileAnalytics({
                 <span className="text-sm font-medium text-gray-700">Social Engagement</span>
                 <span className="text-sm text-gray-600">78%</span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full w-full">
-                <div className="h-2 bg-yellow-600 rounded-full w-3/4"></div>
-              </div>
+              <Progress value={78} className="h-2" />
             </div>
 
             <div>
@@ -541,9 +416,7 @@ export function ProfileAnalytics({
                 <span className="text-sm font-medium text-gray-700">Investment Activity</span>
                 <span className="text-sm text-gray-600">95%</span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full w-full">
-                <div className="h-2 bg-red-600 rounded-full w-19/20"></div>
-              </div>
+              <Progress value={95} className="h-2" />
             </div>
           </div>
 
@@ -560,8 +433,8 @@ export function ProfileAnalytics({
         </CardContent>
       </Card>
 
-      {/* Daily Performance Chart */}
-      <Card className="border-none shadow-none">
+      {/* Performance Tabs */}
+      <Card>
         <CardContent className="p-0">
           <Tabs defaultValue="daily">
             <TabsList className="grid w-full grid-cols-3">
@@ -569,14 +442,38 @@ export function ProfileAnalytics({
               <TabsTrigger value="weekly">Weekly</TabsTrigger>
               <TabsTrigger value="monthly">Monthly</TabsTrigger>
             </TabsList>
-            <TabsContent value="daily" className="mt-4 h-64">
-              {renderDailyPerformanceChart()}
+            <TabsContent value="daily" className="mt-4 p-6">
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="views" stroke="#3B82F6" />
+                </LineChart>
+              </ResponsiveContainer>
             </TabsContent>
-            <TabsContent value="weekly" className="mt-4 h-64">
-              {renderWeeklyPerformanceChart()}
+            <TabsContent value="weekly" className="mt-4 p-6">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="connections" fill="#10B981" />
+                </BarChart>
+              </ResponsiveContainer>
             </TabsContent>
-            <TabsContent value="monthly" className="mt-4 h-64">
-              {renderMonthlyPerformanceChart()}
+            <TabsContent value="monthly" className="mt-4 p-6">
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="activity" stroke="#F59E0B" />
+                </LineChart>
+              </ResponsiveContainer>
             </TabsContent>
           </Tabs>
         </CardContent>

@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-
 import DashboardClient from "./DashboardClient"
 
 export const metadata: Metadata = {
@@ -12,5 +11,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <DashboardClient children={children} />
+  return <DashboardClient>{children}</DashboardClient>
 }
